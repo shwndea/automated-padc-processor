@@ -1,0 +1,54 @@
+{
+    "location_mappings": {
+        "Program C Charter Resident": "Prog_C",
+        "Program C Charter Resident - Transitional Kindergarten(TK)": "Prog_C_TK",
+        "Program C Charter Resident - McClellan(CM)": "Prog_C_CM",
+        "Program C Charter Resident - Sac Youth Center(SYC)": "Prog_C_SYC",
+        "Program N Non-Resident Charter": "Prog_N",
+        "Program N Non-Resident Charter - Transitional Kindergarten(TK)": "Prog_N_TK",
+        "Program N Non-Resident Charter - McClellan(CM)": "Prog_N_CM",
+        "Program N Non-Resident Charter - Sac Youth Center(SYC)": "Prog_N_SYC",
+        "Program J Indep Study Charter Resident": "Prog_J",
+        "Program J Indep Study Charter Resident - Transitional Kindergarten(TK)": "Prog_J_TK",
+        "Program K Indep Study Charter Non-Resident": "Prog_K",
+        "Program K Indep Study Charter Non-Resident - Transitional Kindergarten(TK)": "Prog_K_TK"
+    },
+    "consolidation_rules": {
+        "Prog_C": [
+            "Prog_C",
+            "Prog_C_CM",
+            "Prog_C_SYC"
+        ],
+        "Prog_C_TK": [
+            "Prog_C_TK"
+        ],
+        "Prog_N": [
+            "Prog_N",
+            "Prog_N_CM",
+            "Prog_N_SYC"
+        ],
+        "Prog_N_TK": [
+            "Prog_N_TK"
+        ],
+        "Prog_J": [
+            "Prog_J"
+        ],
+        "Prog_J_TK": [
+            "Prog_J_TK"
+        ],
+        "Prog_K": [
+            "Prog_K"
+        ],
+        "Prog_K_TK": [
+            "Prog_K_TK"
+        ]
+    },
+    "csv_column_mappings": {
+        "location_column": "Location",
+        "date_column": "Date",
+        "student_id_column": "Student ID",
+        "student_name_column": "Student Name",
+        "grade_column": "Grade",
+        "status_column": "Status"
+    }
+}

@@ -1201,12 +1201,20 @@ For additional assistance, contact your system administrator."""
         self.log_message("=" * 60, 'info')
     
     def set_default_paths(self):
-        """Set default file paths if they exist"""
+        """Set default file paths by finding the most recent files"""
         
-        # Default input path from original script
-        default_input = "C:\\Users\\Shawn\\Downloads\\PrintMonthlyAttendanceSummaryTotals_20251011_221900_91083ce.xlsx"
-        if Path(default_input).exists():
-            self.input_file_path.set(default_input)
+        # Find the most recent attendance file in Downloads
+        downloads_dir = Path("C:\\Users\\Shawn\\Downloads")
+        
+        if downloads_dir.exists():
+            # Find all attendance summary files
+            attendance_files = list(downloads_dir.glob("PrintMonthlyAttendanceSummaryTotals_*.xlsx"))
+            
+            if attendance_files:
+                # Get the most recent file by modification time
+                most_recent_input = max(attendance_files, key=lambda f: f.stat().st_mtime)
+                self.input_file_path.set(str(most_recent_input))
+                self.log_message(f"Auto-selected most recent input file: {most_recent_input.name}", 'info')
         
         # Default output path from original script
         default_output = "C:\\Users\\Shawn\\Downloads\\2025-2026_I4C_ADA_Reconciliation.xlsx"
