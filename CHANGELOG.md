@@ -5,6 +5,58 @@ All notable changes to the ADA Audit Tool will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-02-18
+
+### Fixed
+- **Critical: TK vs K-3 Data Mapping Issue**
+  - Fixed Program C row 58 to correctly fetch K-3 data instead of TK-3
+  - Fixed Program N row 75 to correctly fetch K-3 data instead of TK-3
+  - Fixed Program J row 65 to correctly fetch `Prog_J_TK` (TK program) data instead of main program TK-3 age group
+  - Fixed Program J row 66 to correctly fetch main program K-3 data
+  - Fixed Program K row 83 to correctly fetch K-3 data instead of TK-3
+  
+- **Consolidation Logic Overhaul**
+  - TK programs (`_TK` suffix) now only create TK-3 age group data
+  - Main programs now correctly create K-3, 4-6, 7-8, 9-12 age group data (not TK-3)
+  - This ensures proper separation between TK programs and main programs with TK-3 age groups
+
+### Added
+- **New Utility Scripts**
+  - `run_with_config.py`: Run audits with pre-configured boundary settings
+  - `check_available_months.py`: Utility to check available months in Excel files
+  - `print_ada_consolidation.py`: Debug utility for viewing consolidation results
+  - `print_ada_consolidation_FIXED.py`: Fixed version of consolidation printer
+  - `test_display_values.py`: Test utility for verifying display values
+
+- **New Configuration Files**
+  - `configs/intake_locations.json`: Pre-configured intake location boundaries
+  - `boundary_settings/COA Elem.json`: COA Elementary boundary configuration
+  - `boundary_settings/COA Mid.json`: COA Middle School boundary configuration
+  - `boundary_settings/HLA.json`: HLA boundary configuration
+
+- **Helper Function for Attendance Values**
+  - Added `get_attendance_value()` helper function to handle TK-3/K-3 notation fallback
+  - Improves reliability when source Excel files use inconsistent notation
+
+### Changed
+- **Cell Mapping Structure**
+  - Reorganized cell mappings to group TK rows before main program rows
+  - Added clear comments documenting row assignments for each program
+  - Improved code readability with consistent ordering
+
+- **Row Assignments (TK-12 Mode)**
+  - Row 57: Prog_C_TK (TK-3 only)
+  - Rows 58-61: Prog_C Main (K-3, 4-6, 7-8, 9-12)
+  - Row 65: Prog_J_TK (TK-3 only)
+  - Rows 66-69: Prog_J Main (K-3, 4-6, 7-8, 9-12)
+  - Row 74: Prog_N_TK (TK-3 only)
+  - Rows 75-78: Prog_N Main (K-3, 4-6, 7-8, 9-12)
+  - Row 82: Prog_K_TK (TK-3 only)
+  - Rows 83-86: Prog_K Main (K-3, 4-6, 7-8, 9-12)
+
+### Documentation
+- Updated .gitignore to exclude Excel temp files (`~$*`)
+
 ## [2.0.0] - 2025-11-06
 
 ### Added

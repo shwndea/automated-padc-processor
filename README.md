@@ -101,15 +101,24 @@ The tool supports the following program configurations:
 ada-audit-tool/
 ├── ADA_Audit_GUI.py              # Main GUI application
 ├── ADA_Audit_25_26_IMPROVED.py   # Core audit processing functions
-├── ADA_Dashboard_Module.py        # Dashboard generation module
-├── boundary_settings/             # Saved boundary configurations
+├── ADA_Dashboard_Module.py       # Dashboard generation module
+├── run_with_config.py            # Run audits with pre-configured settings
+├── check_available_months.py     # Utility to check available months
+├── boundary_settings/            # Saved boundary configurations
 │   ├── COA Elem.json
 │   ├── COA Mid.json
-│   └── HLA.json
-├── requirements.txt               # Python dependencies
-├── README.md                      # This file
-├── LICENSE                        # License information
-└── .gitignore                     # Git ignore rules
+│   ├── HLA.json
+│   └── example_configuration.json
+├── configs/                      # Additional configuration files
+│   └── intake_locations.json
+├── sample_data/                  # Sample data files for testing
+│   └── README.md
+├── requirements.txt              # Python dependencies
+├── README.md                     # This file
+├── CHANGELOG.md                  # Version history and changes
+├── QUICKSTART.md                 # Quick start guide
+├── CONTRIBUTING.md               # Contribution guidelines
+└── LICENSE                       # License information
 ```
 
 ## Configuration
@@ -132,6 +141,14 @@ Example boundary configuration (JSON):
 }
 ```
 
+### Running with Pre-configured Settings
+
+Use the `run_with_config.py` script to run audits with saved boundary configurations:
+
+```bash
+python run_with_config.py
+```
+
 ### Keyboard Shortcuts
 
 | Shortcut | Action |
@@ -147,6 +164,21 @@ Example boundary configuration (JSON):
 | Esc | Return focus to main window |
 | Ctrl+Up/Down | Scroll line by line |
 | Page Up/Down | Scroll page by page |
+
+## Data Mapping (TK-12 Mode)
+
+The tool correctly maps data to Excel rows based on program type:
+
+| Row | Program | Age Group | Description |
+|-----|---------|-----------|-------------|
+| 57 | Prog_C_TK | TK-3 | Charter Resident TK Program |
+| 58-61 | Prog_C | K-3, 4-6, 7-8, 9-12 | Charter Resident Main Program |
+| 65 | Prog_J_TK | TK-3 | Independent Study Resident TK Program |
+| 66-69 | Prog_J | K-3, 4-6, 7-8, 9-12 | Independent Study Resident Main Program |
+| 74 | Prog_N_TK | TK-3 | Non-Resident Charter TK Program |
+| 75-78 | Prog_N | K-3, 4-6, 7-8, 9-12 | Non-Resident Charter Main Program |
+| 82 | Prog_K_TK | TK-3 | Independent Study Non-Resident TK Program |
+| 83-86 | Prog_K | K-3, 4-6, 7-8, 9-12 | Independent Study Non-Resident Main Program |
 
 ## Output Files
 
@@ -177,6 +209,10 @@ brew install python-tk
 - Check that the file is not open in Excel
 - Verify file permissions
 
+**Excel temp file errors (`~$` files)**
+- Close the Excel file before running git commands
+- These files are automatically ignored by git
+
 **Boundary detection fails**
 - Manually review the Excel file structure
 - Check that program names match expected values
@@ -185,6 +221,11 @@ brew install python-tk
 **GUI scaling issues**
 - Adjust Windows display scaling (Settings > Display)
 - Minimum recommended resolution: 1200x800
+
+**Data appearing in wrong rows**
+- Verify the correct school type (TK-12 vs K-12) is selected
+- Check that TK programs (`_TK` suffix) have correct boundaries
+- Review the consolidation log for data mapping details
 
 ## Development
 
@@ -205,6 +246,12 @@ from ADA_Audit_25_26_IMPROVED import (
 from ADA_Dashboard_Module import run_ada_dashboard_with_boundaries
 ```
 
+### Utility Scripts
+
+- `check_available_months.py` - Check which months have data in an Excel file
+- `print_ada_consolidation.py` - Debug consolidation results
+- `test_display_values.py` - Verify display values are correct
+
 ## Contributing
 
 We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
@@ -223,7 +270,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 For issues, questions, or feature requests:
 - Create an issue on GitHub
-- Contact: [your-email@example.com]
+- Review the [CHANGELOG.md](CHANGELOG.md) for recent changes
 
 ## Acknowledgments
 
@@ -233,14 +280,20 @@ For issues, questions, or feature requests:
 
 ## Version History
 
-### v2.0 (Current)
+### v2.1.0 (Current - February 2026)
+- Fixed critical TK vs K-3 data mapping issues
+- Added utility scripts for debugging and configuration
+- Improved consolidation logic for TK/main program separation
+- Added pre-configured boundary settings for multiple schools
+
+### v2.0.0 (November 2025)
 - ADA-compliant GUI interface
 - Saved boundary configurations
 - Dashboard generation module
 - Comprehensive keyboard navigation
 - High contrast mode support
 
-### v1.0
+### v1.0.0 (October 2025)
 - Initial command-line version
 - Basic audit processing functionality
 
