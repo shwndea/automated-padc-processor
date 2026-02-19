@@ -101,6 +101,16 @@ Master these shortcuts to work faster:
 | `Ctrl+D` | Run dashboard |
 | `F1` | Show help |
 
+## Alternative: Run with Pre-configured Settings
+
+If you have a saved configuration, you can skip the GUI entirely:
+
+```bash
+python run_with_config.py
+```
+
+This script uses pre-configured boundary settings from the `configs/` or `boundary_settings/` folders.
+
 ## Common Issues & Solutions
 
 ### "No data extracted"
@@ -118,6 +128,15 @@ Master these shortcuts to work faster:
 - Double-click the cell to edit
 - Use Excel row numbers (the numbers on the left side of Excel)
 
+### Data appearing in wrong row
+- **Solution**: Verify the correct school type (TK-12 vs K-12) is selected
+- Check that TK programs are correctly separated from main programs
+- Review the log for consolidation details
+
+### Git errors with Excel files
+- **Solution**: Close Excel before running git commands
+- Temp files (`~$*.xlsx`) are automatically ignored
+
 ### Application won't start
 - Check Python version: `python --version` (need 3.8+)
 - Verify tkinter is installed: `python -c "import tkinter"`
@@ -127,7 +146,9 @@ Master these shortcuts to work faster:
 
 - **Save configurations** for schools you process regularly
 - **Explore the dashboard** feature for CSV summaries
+- **Try run_with_config.py** for automated processing
 - **Read the full README.md** for advanced features
+- **Check CHANGELOG.md** for recent updates and fixes
 - **Check CONTRIBUTING.md** if you want to improve the tool
 
 ## Getting Help
@@ -135,6 +156,7 @@ Master these shortcuts to work faster:
 - Press `F1` in the application for accessibility help
 - Check the log area for error messages
 - Review README.md for detailed documentation
+- Review CHANGELOG.md for known issues and fixes
 - Create an issue on GitHub if you find a bug
 
 ## Tips for Success
@@ -144,6 +166,7 @@ Master these shortcuts to work faster:
 ✅ **Use descriptive names** when saving output files  
 ✅ **Keep backups** of your original Excel files  
 ✅ **Check the logs** if something seems wrong  
+✅ **Close Excel files** before running git commands  
 
 ---
 
