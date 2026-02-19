@@ -74,6 +74,7 @@ class ADAAuditGUI:
         self.input_file_path = tk.StringVar()
         self.output_file_path = tk.StringVar()
         self.worksheet_name = tk.StringVar(value="Template- Apportionment Summary")
+        self.school_type = tk.StringVar(value="TK")  # TK-12 or K-12 school type
         
         # Program mappings from original script (updated with new McClellan and SYC locations)
         self.program_name_mappings = {
@@ -771,6 +772,17 @@ For additional assistance, contact your system administrator."""
                        focuscolor=self.colors['accent'],
                        font=('Arial', 11))
         
+        style.configure('Accessible.TRadiobutton',
+                       foreground='#000000',  # Black text for readability
+                       background=self.colors['background'],  # White background
+                       font=('Arial', 11),
+                       focuscolor=self.colors['accent'],
+                       borderwidth=2)
+        
+        style.map('Accessible.TRadiobutton',
+                 background=[('active', '#F0F0F0')],  # Light gray on hover
+                 foreground=[('active', '#000000')])
+        
         # Title with proper heading hierarchy
         title_label = ttk.Label(self.main_frame, text="Automated PADC Processor", 
                                style='Title.TLabel')
@@ -855,12 +867,35 @@ For additional assistance, contact your system administrator."""
         worksheet_entry.grid(row=2, column=1, sticky=(tk.W, tk.E), padx=(10, 10))
         self.add_to_tab_order(worksheet_entry)
         
+        # School type selection (TK-12 or K-12)
+        school_type_label = ttk.Label(file_frame, text="School Type:", 
+                                      style='FileLabel.TLabel')
+        school_type_label.grid(row=3, column=0, sticky=tk.W, pady=(10, 0))
+        
+        # Create a frame for radio buttons
+        school_type_frame = ttk.Frame(file_frame)
+        school_type_frame.grid(row=3, column=1, sticky=tk.W, padx=(10, 10), pady=(10, 0))
+        
+        # TK-12 radio button
+        tk12_radio = ttk.Radiobutton(school_type_frame, text="TK-12 (Transitional Kindergarten - 12th Grade)", 
+                                     variable=self.school_type, value="TK",
+                                     style='Accessible.TRadiobutton')
+        tk12_radio.pack(side=tk.LEFT, padx=(0, 20))
+        self.add_to_tab_order(tk12_radio)
+        
+        # K-12 radio button
+        k12_radio = ttk.Radiobutton(school_type_frame, text="K-12 (Kindergarten - 12th Grade)", 
+                                    variable=self.school_type, value="K",
+                                    style='Accessible.TRadiobutton')
+        k12_radio.pack(side=tk.LEFT)
+        self.add_to_tab_order(k12_radio)
+        
         # Add descriptive text for screen readers
         help_text = ttk.Label(file_frame, 
-                             text="Select your Excel attendance file and specify where to save the audit results.",
+                             text="Select your Excel attendance file and specify where to save the audit results. Choose the appropriate school type (TK-12 or K-12).",
                              style='Accessible.TLabel',
                              font=('Arial', 9, 'italic'))
-        help_text.grid(row=3, column=0, columnspan=3, pady=(10, 0), sticky=tk.W)
+        help_text.grid(row=4, column=0, columnspan=3, pady=(10, 0), sticky=tk.W)
     
     def create_boundaries_section(self, parent, row):
         """Create program boundaries display and editing section with ADA compliance"""
@@ -1648,10 +1683,16 @@ For additional assistance, contact your system administrator."""
             self.progress_var.set(80)
             self.log_message("💾 Writing consolidated data to Excel...")
             
+            # Determine which cell mapping to use based on school type
+            use_tk_12 = (self.school_type.get() == "TK")
+            school_type_name = "TK-12" if use_tk_12 else "K-12"
+            self.log_message(f"📝 Using {school_type_name} cell mapping...")
+            
             write_all_attendance_data_to_excel_efficiently(
                 self.extracted_attendance_data,
                 self.output_file_path.get(),
-                self.worksheet_name.get()
+                self.worksheet_name.get(),
+                use_tk_12
             )
             
             self.progress_var.set(100)
@@ -1678,6 +1719,27 @@ For additional assistance, contact your system administrator."""
             self.root.after(0, lambda: self.update_button_states())
             self.root.after(0, lambda: self.progress_var.set(0))
     
+    def get_attendance_value_from_raw(self, raw_attendance_data, prog, month, age_group):
+        """
+        Try to get value with either TK-3 or K-3 notation.
+        
+        This handles the case where the source Excel file may have "TK-3" or "K-3"
+        in column E, regardless of which school type the user selected.
+        """
+        key1 = f"{prog}_Month_{month}_{age_group}: "
+        if key1 in raw_attendance_data and raw_attendance_data[key1] != 0:
+            return raw_attendance_data[key1]
+        
+        # Try alternate notation
+        if age_group == "TK-3":
+            key2 = f"{prog}_Month_{month}_K-3: "
+            return raw_attendance_data.get(key2, 0)
+        elif age_group == "K-3":
+            key2 = f"{prog}_Month_{month}_TK-3: "
+            return raw_attendance_data.get(key2, 0)
+        
+        return 0
+    
     def consolidate_attendance_data(self, raw_attendance_data):
         """
         Consolidate sub-location data with parent programs.
@@ -1687,13 +1749,25 @@ For additional assistance, contact your system administrator."""
         """
         consolidated_attendance_data = {}
         
+        # Determine which age groups to use based on school type
+        use_tk_12 = (self.school_type.get() == "TK")
+        
         # Process each consolidation rule
         for parent_program, child_programs in self.program_consolidation_rules.items():
             self.log_message(f"  Consolidating {parent_program}: {child_programs}")
             
+            # Determine age groups for this specific program
+            # TK programs (ending in _TK) use TK-3, main programs use K-3
+            if parent_program.endswith("_TK"):
+                age_groups = ["TK-3"]
+                self.log_message(f"   Using TK program age groups for {parent_program}: {age_groups}")
+            else:
+                age_groups = ["K-3", "4-6", "7-8", "9-12"]
+                self.log_message(f"   Using main program age groups for {parent_program}: {age_groups}")
+            
             # For each month (1-12) and age group combination
             for month in range(1, 13):
-                for age_group in ["TK-3", "4-6", "7-8", "9-12"]:
+                for age_group in age_groups:
                     # Create the field name pattern
                     field_pattern = f"{parent_program}_Month_{month}_{age_group}: "
                     
@@ -1702,8 +1776,10 @@ For additional assistance, contact your system administrator."""
                     found_values = []
                     
                     for child_program in child_programs:
-                        child_field_pattern = f"{child_program}_Month_{month}_{age_group}: "
-                        child_value = raw_attendance_data.get(child_field_pattern, 0)
+                        # Use helper function to check both TK-3 and K-3 notations
+                        child_value = self.get_attendance_value_from_raw(
+                            raw_attendance_data, child_program, month, age_group
+                        )
                         
                         if child_value and not pd.isna(child_value) and child_value != 0:
                             total_value += child_value

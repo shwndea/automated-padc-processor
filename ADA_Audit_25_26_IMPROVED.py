@@ -219,7 +219,7 @@ def write_program_data_one_by_one(attendance_data, output_excel_path, output_wor
     print(f"Data written successfully in {total_time:.2f} seconds.")
 
 
-def write_all_attendance_data_to_excel_efficiently(attendance_data, output_excel_path, output_worksheet_name):
+def write_all_attendance_data_to_excel_efficiently(attendance_data, output_excel_path, output_worksheet_name, use_tk_12=True):
     """
     Efficiently writes all attendance data to Excel in one batch operation.
     
@@ -236,70 +236,86 @@ def write_all_attendance_data_to_excel_efficiently(attendance_data, output_excel
     - attendance_data: Dictionary containing all the attendance data
     - output_excel_path: Path to the Excel file where data should be written
     - output_worksheet_name: Name of the worksheet tab to write to
+    - use_tk_12: If True, uses TK-12 cell mapping; if False, uses K-12 cell mapping
     """
+    
+    # Helper function to check both TK-3 and K-3 notation
+    def get_attendance_value(prog, month, age_group):
+        """Try to get value with either TK-3 or K-3 notation"""
+        key1 = f"{prog}_Month_{month}_{age_group}: "
+        if key1 in attendance_data and attendance_data[key1] != 0:
+            return attendance_data[key1]
+        if age_group == "TK-3":
+            key2 = f"{prog}_Month_{month}_K-3: "
+            return attendance_data.get(key2, 0)
+        elif age_group == "K-3":
+            key2 = f"{prog}_Month_{month}_TK-3: "
+            return attendance_data.get(key2, 0)
+        return 0
     
     # Create a master list mapping each data field to its target cell
     # IMPORTANT: This matches EXACTLY the same cells as the original cell_value_list
-    cell_mapping_list = [
+    cell_mapping_list_TK_12 = [
         # =================================================================
         # PROGRAM C CHARTER RESIDENT PLACEMENTS (Rows 57-61)
+        # Row 57: Prog_C_TK (TK-3 only), Rows 58-61: Prog_C Main (K-3, 4-6, 7-8, 9-12)
         # =================================================================
-        ("E58", attendance_data.get("Prog_C_Month_1_TK-3: ", 0)),
+        ("E57", attendance_data.get("Prog_C_TK_Month_1_TK-3: ", 0)),
+        ("E58", attendance_data.get("Prog_C_Month_1_K-3: ", 0)),
         ("E59", attendance_data.get("Prog_C_Month_1_4-6: ", 0)),
         ("E60", attendance_data.get("Prog_C_Month_1_7-8: ", 0)),
         ("E61", attendance_data.get("Prog_C_Month_1_9-12: ", 0)),
-        ("E57", attendance_data.get("Prog_C_TK_Month_1_TK-3: ", 0)),
-        ("F58", attendance_data.get("Prog_C_Month_2_TK-3: ", 0)),
+        ("F57", attendance_data.get("Prog_C_TK_Month_2_TK-3: ", 0)),
+        ("F58", attendance_data.get("Prog_C_Month_2_K-3: ", 0)),
         ("F59", attendance_data.get("Prog_C_Month_2_4-6: ", 0)),
         ("F60", attendance_data.get("Prog_C_Month_2_7-8: ", 0)),
         ("F61", attendance_data.get("Prog_C_Month_2_9-12: ", 0)),
-        ("F57", attendance_data.get("Prog_C_TK_Month_2_TK-3: ", 0)),
-        ("G58", attendance_data.get("Prog_C_Month_3_TK-3: ", 0)),
+        ("G57", attendance_data.get("Prog_C_TK_Month_3_TK-3: ", 0)),
+        ("G58", attendance_data.get("Prog_C_Month_3_K-3: ", 0)),
         ("G59", attendance_data.get("Prog_C_Month_3_4-6: ", 0)),
         ("G60", attendance_data.get("Prog_C_Month_3_7-8: ", 0)),
         ("G61", attendance_data.get("Prog_C_Month_3_9-12: ", 0)),
-        ("G57", attendance_data.get("Prog_C_TK_Month_3_TK-3: ", 0)),
-        ("H58", attendance_data.get("Prog_C_Month_4_TK-3: ", 0)),
+        ("H57", attendance_data.get("Prog_C_TK_Month_4_TK-3: ", 0)),
+        ("H58", attendance_data.get("Prog_C_Month_4_K-3: ", 0)),
         ("H59", attendance_data.get("Prog_C_Month_4_4-6: ", 0)),
         ("H60", attendance_data.get("Prog_C_Month_4_7-8: ", 0)),
         ("H61", attendance_data.get("Prog_C_Month_4_9-12: ", 0)),
-        ("H57", attendance_data.get("Prog_C_TK_Month_4_TK-3: ", 0)),
-        ("I58", attendance_data.get("Prog_C_Month_5_TK-3: ", 0)),
+        ("I57", attendance_data.get("Prog_C_TK_Month_5_TK-3: ", 0)),
+        ("I58", attendance_data.get("Prog_C_Month_5_K-3: ", 0)),
         ("I59", attendance_data.get("Prog_C_Month_5_4-6: ", 0)),
         ("I60", attendance_data.get("Prog_C_Month_5_7-8: ", 0)),
         ("I61", attendance_data.get("Prog_C_Month_5_9-12: ", 0)),
-        ("I57", attendance_data.get("Prog_C_TK_Month_5_TK-3: ", 0)),
-        ("J58", attendance_data.get("Prog_C_Month_6_TK-3: ", 0)),
+        ("J57", attendance_data.get("Prog_C_TK_Month_6_TK-3: ", 0)),
+        ("J58", attendance_data.get("Prog_C_Month_6_K-3: ", 0)),
         ("J59", attendance_data.get("Prog_C_Month_6_4-6: ", 0)),
         ("J60", attendance_data.get("Prog_C_Month_6_7-8: ", 0)),
         ("J61", attendance_data.get("Prog_C_Month_6_9-12: ", 0)),
-        ("J57", attendance_data.get("Prog_C_TK_Month_6_TK-3: ", 0)),
-        ("K58", attendance_data.get("Prog_C_Month_7_TK-3: ", 0)),
+        ("K57", attendance_data.get("Prog_C_TK_Month_7_TK-3: ", 0)),
+        ("K58", attendance_data.get("Prog_C_Month_7_K-3: ", 0)),
         ("K59", attendance_data.get("Prog_C_Month_7_4-6: ", 0)),
         ("K60", attendance_data.get("Prog_C_Month_7_7-8: ", 0)),
         ("K61", attendance_data.get("Prog_C_Month_7_9-12: ", 0)),
-        ("K57", attendance_data.get("Prog_C_TK_Month_7_TK-3: ", 0)),
-        ("L58", attendance_data.get("Prog_C_Month_8_TK-3: ", 0)),
+        ("L57", attendance_data.get("Prog_C_TK_Month_8_TK-3: ", 0)),
+        ("L58", attendance_data.get("Prog_C_Month_8_K-3: ", 0)),
         ("L59", attendance_data.get("Prog_C_Month_8_4-6: ", 0)),
         ("L60", attendance_data.get("Prog_C_Month_8_7-8: ", 0)),
         ("L61", attendance_data.get("Prog_C_Month_8_9-12: ", 0)),
-        ("L57", attendance_data.get("Prog_C_TK_Month_8_TK-3: ", 0)),
-        ("M58", attendance_data.get("Prog_C_Month_9_TK-3: ", 0)),
+        ("M57", attendance_data.get("Prog_C_TK_Month_9_TK-3: ", 0)),
+        ("M58", attendance_data.get("Prog_C_Month_9_K-3: ", 0)),
         ("M59", attendance_data.get("Prog_C_Month_9_4-6: ", 0)),
         ("M60", attendance_data.get("Prog_C_Month_9_7-8: ", 0)),
         ("M61", attendance_data.get("Prog_C_Month_9_9-12: ", 0)),
-        ("M57", attendance_data.get("Prog_C_TK_Month_9_TK-3: ", 0)),
-        ("N58", attendance_data.get("Prog_C_Month_10_TK-3: ", 0)),
+        ("N57", attendance_data.get("Prog_C_TK_Month_10_TK-3: ", 0)),
+        ("N58", attendance_data.get("Prog_C_Month_10_K-3: ", 0)),
         ("N59", attendance_data.get("Prog_C_Month_10_4-6: ", 0)),
         ("N60", attendance_data.get("Prog_C_Month_10_7-8: ", 0)),
         ("N61", attendance_data.get("Prog_C_Month_10_9-12: ", 0)),
-        ("N57", attendance_data.get("Prog_C_TK_Month_10_TK-3: ", 0)),
-        ("O58", attendance_data.get("Prog_C_Month_11_TK-3: ", 0)),
+        ("O57", attendance_data.get("Prog_C_TK_Month_11_TK-3: ", 0)),
+        ("O58", attendance_data.get("Prog_C_Month_11_K-3: ", 0)),
         ("O59", attendance_data.get("Prog_C_Month_11_4-6: ", 0)),
         ("O60", attendance_data.get("Prog_C_Month_11_7-8: ", 0)),
         ("O61", attendance_data.get("Prog_C_Month_11_9-12: ", 0)),
-        ("O57", attendance_data.get("Prog_C_TK_Month_11_TK-3: ", 0)),
-        ("P58", attendance_data.get("Prog_C_Month_12_TK-3: ", 0)),
+        ("P58", attendance_data.get("Prog_C_Month_12_K-3: ", 0)),
         ("P59", attendance_data.get("Prog_C_Month_12_4-6: ", 0)),
         ("P60", attendance_data.get("Prog_C_Month_12_7-8: ", 0)),
         ("P61", attendance_data.get("Prog_C_Month_12_9-12: ", 0)),
@@ -307,200 +323,474 @@ def write_all_attendance_data_to_excel_efficiently(attendance_data, output_excel
         
         # =================================================================
         # PROGRAM N NON-RESIDENT CHARTER PLACEMENTS (Rows 74-78)
+        # Row 74: Prog_N_TK (TK-3 only), Rows 75-78: Prog_N Main (K-3, 4-6, 7-8, 9-12)
         # =================================================================
-        ("E75", attendance_data.get("Prog_N_Month_1_TK-3: ", 0)),
+        ("E74", get_attendance_value("Prog_N_TK", 1, "TK-3")),
+        ("E75", get_attendance_value("Prog_N", 1, "K-3")),
+        ("E76", get_attendance_value("Prog_N", 1, "4-6")),
+        ("E77", get_attendance_value("Prog_N", 1, "7-8")),
+        ("E78", get_attendance_value("Prog_N", 1, "9-12")),
+        ("F74", get_attendance_value("Prog_N_TK", 2, "TK-3")),
+        ("F75", get_attendance_value("Prog_N", 2, "K-3")),
+        ("F76", get_attendance_value("Prog_N", 2, "4-6")),
+        ("F77", get_attendance_value("Prog_N", 2, "7-8")),
+        ("F78", get_attendance_value("Prog_N", 2, "9-12")),
+        ("G74", get_attendance_value("Prog_N_TK", 3, "TK-3")),
+        ("G75", get_attendance_value("Prog_N", 3, "K-3")),
+        ("G76", get_attendance_value("Prog_N", 3, "4-6")),
+        ("G77", get_attendance_value("Prog_N", 3, "7-8")),
+        ("G78", get_attendance_value("Prog_N", 3, "9-12")),
+        ("H74", get_attendance_value("Prog_N_TK", 4, "TK-3")),
+        ("H75", get_attendance_value("Prog_N", 4, "K-3")),
+        ("H76", get_attendance_value("Prog_N", 4, "4-6")),
+        ("H77", get_attendance_value("Prog_N", 4, "7-8")),
+        ("H78", get_attendance_value("Prog_N", 4, "9-12")),
+        ("I74", get_attendance_value("Prog_N_TK", 5, "TK-3")),
+        ("I75", get_attendance_value("Prog_N", 5, "K-3")),
+        ("I76", get_attendance_value("Prog_N", 5, "4-6")),
+        ("I77", get_attendance_value("Prog_N", 5, "7-8")),
+        ("I78", get_attendance_value("Prog_N", 5, "9-12")),
+        ("J74", get_attendance_value("Prog_N_TK", 6, "TK-3")),
+        ("J75", get_attendance_value("Prog_N", 6, "K-3")),
+        ("J76", get_attendance_value("Prog_N", 6, "4-6")),
+        ("J77", get_attendance_value("Prog_N", 6, "7-8")),
+        ("J78", get_attendance_value("Prog_N", 6, "9-12")),
+        ("K74", get_attendance_value("Prog_N_TK", 7, "TK-3")),
+        ("K75", get_attendance_value("Prog_N", 7, "K-3")),
+        ("K76", get_attendance_value("Prog_N", 7, "4-6")),
+        ("K77", get_attendance_value("Prog_N", 7, "7-8")),
+        ("K78", get_attendance_value("Prog_N", 7, "9-12")),
+        ("L74", get_attendance_value("Prog_N_TK", 8, "TK-3")),
+        ("L75", get_attendance_value("Prog_N", 8, "K-3")),
+        ("L76", get_attendance_value("Prog_N", 8, "4-6")),
+        ("L77", get_attendance_value("Prog_N", 8, "7-8")),
+        ("L78", get_attendance_value("Prog_N", 8, "9-12")),
+        ("M74", get_attendance_value("Prog_N_TK", 9, "TK-3")),
+        ("M75", get_attendance_value("Prog_N", 9, "K-3")),
+        ("M76", get_attendance_value("Prog_N", 9, "4-6")),
+        ("M77", get_attendance_value("Prog_N", 9, "7-8")),
+        ("M78", get_attendance_value("Prog_N", 9, "9-12")),
+        ("N74", get_attendance_value("Prog_N_TK", 10, "TK-3")),
+        ("N75", get_attendance_value("Prog_N", 10, "K-3")),
+        ("N76", get_attendance_value("Prog_N", 10, "4-6")),
+        ("N77", get_attendance_value("Prog_N", 10, "7-8")),
+        ("N78", get_attendance_value("Prog_N", 10, "9-12")),
+        ("O74", get_attendance_value("Prog_N_TK", 11, "TK-3")),
+        ("O75", get_attendance_value("Prog_N", 11, "K-3")),
+        ("O76", get_attendance_value("Prog_N", 11, "4-6")),
+        ("O77", get_attendance_value("Prog_N", 11, "7-8")),
+        ("O78", get_attendance_value("Prog_N", 11, "9-12")),
+        ("P74", get_attendance_value("Prog_N_TK", 12, "TK-3")),
+        ("P75", get_attendance_value("Prog_N", 12, "K-3")),
+        ("P76", get_attendance_value("Prog_N", 12, "4-6")),
+        ("P77", get_attendance_value("Prog_N", 12, "7-8")),
+        ("P78", get_attendance_value("Prog_N", 12, "9-12")),
+        
+        # =================================================================
+        # PROGRAM J INDEPENDENT STUDY CHARTER RESIDENT PLACEMENTS (Rows 64-69)
+        # ERROR: CONFLICTS WITH PROGRAM K BELOW
+        # Program J TK (row 65) - Fixed to use Prog_J_TK keys
+        # =================================================================
+        ("E65", attendance_data.get("Prog_J_TK_Month_1_TK-3: ", 0)),
+        ("F65", attendance_data.get("Prog_J_TK_Month_2_TK-3: ", 0)),
+        ("G65", attendance_data.get("Prog_J_TK_Month_3_TK-3: ", 0)),
+        ("H65", attendance_data.get("Prog_J_TK_Month_4_TK-3: ", 0)),
+        
+        # Program J Main (rows 66-69)
+        # =================================================================
+        ("E66", attendance_data.get("Prog_J_Month_1_K-3: ", 0)),
+        ("E67", attendance_data.get("Prog_J_Month_1_4-6: ", 0)),
+        ("E68", attendance_data.get("Prog_J_Month_1_7-8: ", 0)),
+        ("E69", attendance_data.get("Prog_J_Month_1_9-12: ", 0)),
+        ("F66", attendance_data.get("Prog_J_Month_2_K-3: ", 0)),
+        ("F67", attendance_data.get("Prog_J_Month_2_4-6: ", 0)),
+        ("F68", attendance_data.get("Prog_J_Month_2_7-8: ", 0)),
+        ("F69", attendance_data.get("Prog_J_Month_2_9-12: ", 0)),
+        ("G66", attendance_data.get("Prog_J_Month_3_K-3: ", 0)),
+        ("G67", attendance_data.get("Prog_J_Month_3_4-6: ", 0)),
+        ("G68", attendance_data.get("Prog_J_Month_3_7-8: ", 0)),
+        ("G69", attendance_data.get("Prog_J_Month_3_9-12: ", 0)),
+        ("H66", attendance_data.get("Prog_J_Month_4_K-3: ", 0)),
+        ("H67", attendance_data.get("Prog_J_Month_4_4-6: ", 0)),
+        ("H68", attendance_data.get("Prog_J_Month_4_7-8: ", 0)),
+        ("H69", attendance_data.get("Prog_J_Month_4_9-12: ", 0)),
+        ("I65", attendance_data.get("Prog_J_TK_Month_5_TK-3: ", 0)),
+        ("I66", attendance_data.get("Prog_J_Month_5_K-3: ", 0)),
+        ("I67", attendance_data.get("Prog_J_Month_5_4-6: ", 0)),
+        ("I68", attendance_data.get("Prog_J_Month_5_7-8: ", 0)),
+        ("I69", attendance_data.get("Prog_J_Month_5_9-12: ", 0)),
+        ("J65", attendance_data.get("Prog_J_TK_Month_6_TK-3: ", 0)),
+        ("J66", attendance_data.get("Prog_J_Month_6_K-3: ", 0)),
+        ("J67", attendance_data.get("Prog_J_Month_6_4-6: ", 0)),
+        ("J68", attendance_data.get("Prog_J_Month_6_7-8: ", 0)),
+        ("J69", attendance_data.get("Prog_J_Month_6_9-12: ", 0)),
+        ("K65", attendance_data.get("Prog_J_TK_Month_7_TK-3: ", 0)),
+        ("K66", attendance_data.get("Prog_J_Month_7_K-3: ", 0)),
+        ("K67", attendance_data.get("Prog_J_Month_7_4-6: ", 0)),
+        ("K68", attendance_data.get("Prog_J_Month_7_7-8: ", 0)),
+        ("K69", attendance_data.get("Prog_J_Month_7_9-12: ", 0)),
+        ("L65", attendance_data.get("Prog_J_TK_Month_8_TK-3: ", 0)),
+        ("L66", attendance_data.get("Prog_J_Month_8_K-3: ", 0)),
+        ("L67", attendance_data.get("Prog_J_Month_8_4-6: ", 0)),
+        ("L68", attendance_data.get("Prog_J_Month_8_7-8: ", 0)),
+        ("L69", attendance_data.get("Prog_J_Month_8_9-12: ", 0)),
+        ("M65", attendance_data.get("Prog_J_TK_Month_9_TK-3: ", 0)),
+        ("M66", attendance_data.get("Prog_J_Month_9_K-3: ", 0)),
+        ("M67", attendance_data.get("Prog_J_Month_9_4-6: ", 0)),
+        ("M68", attendance_data.get("Prog_J_Month_9_7-8: ", 0)),
+        ("M69", attendance_data.get("Prog_J_Month_9_9-12: ", 0)),
+        ("N65", attendance_data.get("Prog_J_TK_Month_10_TK-3: ", 0)),
+        ("N66", attendance_data.get("Prog_J_Month_10_K-3: ", 0)),
+        ("N67", attendance_data.get("Prog_J_Month_10_4-6: ", 0)),
+        ("N68", attendance_data.get("Prog_J_Month_10_7-8: ", 0)),
+        ("N69", attendance_data.get("Prog_J_Month_10_9-12: ", 0)),
+        ("O65", attendance_data.get("Prog_J_TK_Month_11_TK-3: ", 0)),
+        ("O66", attendance_data.get("Prog_J_Month_11_K-3: ", 0)),
+        ("O67", attendance_data.get("Prog_J_Month_11_4-6: ", 0)),
+        ("O68", attendance_data.get("Prog_J_Month_11_7-8: ", 0)),
+        ("O69", attendance_data.get("Prog_J_Month_11_9-12: ", 0)),
+        ("P65", attendance_data.get("Prog_J_TK_Month_12_TK-3: ", 0)),
+        ("P66", attendance_data.get("Prog_J_Month_12_K-3: ", 0)),
+        ("P67", attendance_data.get("Prog_J_Month_12_4-6: ", 0)),
+        ("P68", attendance_data.get("Prog_J_Month_12_7-8: ", 0)),
+        ("P69", attendance_data.get("Prog_J_Month_12_9-12: ", 0)),
+        
+        # =================================================================
+        # PROGRAM K INDEPENDENT STUDY CHARTER NON-RESIDENT PLACEMENTS (82-86)
+        # WARNING: These cells OVERWRITE Program N data! Same cells used!
+        # Row 82: Prog_K_TK (TK-3 only), Rows 83-86: Prog_K Main (K-3, 4-6, 7-8, 9-12)
+        # =================================================================
+        ("E82", attendance_data.get("Prog_K_TK_Month_1_TK-3: ", 0)),    # ⚠️ OVERWRITES Prog_N
+        ("E83", attendance_data.get("Prog_K_Month_1_K-3: ", 0)),        # ⚠️ OVERWRITES Prog_N
+        ("E84", attendance_data.get("Prog_K_Month_1_4-6: ", 0)),        # ⚠️ OVERWRITES Prog_N
+        ("E85", attendance_data.get("Prog_K_Month_1_7-8: ", 0)),        # ⚠️ OVERWRITES Prog_N
+        ("E86", attendance_data.get("Prog_K_Month_1_9-12: ", 0)),       # ⚠️ OVERWRITES Prog_N
+        ("F82", attendance_data.get("Prog_K_TK_Month_2_TK-3: ", 0)),    # ⚠️ OVERWRITES Prog_N
+        ("F83", attendance_data.get("Prog_K_Month_2_K-3: ", 0)),        # ⚠️ OVERWRITES Prog_N
+        ("F84", attendance_data.get("Prog_K_Month_2_4-6: ", 0)),        # ⚠️ OVERWRITES Prog_N
+        ("F85", attendance_data.get("Prog_K_Month_2_7-8: ", 0)),        # ⚠️ OVERWRITES Prog_N
+        ("F86", attendance_data.get("Prog_K_Month_2_9-12: ", 0)),       # ⚠️ OVERWRITES Prog_N
+        ("G82", attendance_data.get("Prog_K_TK_Month_3_TK-3: ", 0)),    # ⚠️ OVERWRITES Prog_N
+        ("G83", attendance_data.get("Prog_K_Month_3_K-3: ", 0)),        # ⚠️ OVERWRITES Prog_N
+        ("G84", attendance_data.get("Prog_K_Month_3_4-6: ", 0)),        # ⚠️ OVERWRITES Prog_N
+        ("G85", attendance_data.get("Prog_K_Month_3_7-8: ", 0)),        # ⚠️ OVERWRITES Prog_N
+        ("G86", attendance_data.get("Prog_K_Month_3_9-12: ", 0)),       # ⚠️ OVERWRITES Prog_N
+        ("H82", attendance_data.get("Prog_K_TK_Month_4_TK-3: ", 0)),    # ⚠️ OVERWRITES Prog_N
+        ("H83", attendance_data.get("Prog_K_Month_4_K-3: ", 0)),        # ⚠️ OVERWRITES Prog_N
+        ("H84", attendance_data.get("Prog_K_Month_4_4-6: ", 0)),        # ⚠️ OVERWRITES Prog_N
+        ("H85", attendance_data.get("Prog_K_Month_4_7-8: ", 0)),        # ⚠️ OVERWRITES Prog_N
+        ("H86", attendance_data.get("Prog_K_Month_4_9-12: ", 0)),       # ⚠️ OVERWRITES Prog_N
+        ("I82", attendance_data.get("Prog_K_TK_Month_5_TK-3: ", 0)),    # ⚠️ OVERWRITES Prog_N
+        ("I83", attendance_data.get("Prog_K_Month_5_K-3: ", 0)),        # ⚠️ OVERWRITES Prog_N
+        ("I84", attendance_data.get("Prog_K_Month_5_4-6: ", 0)),        # ⚠️ OVERWRITES Prog_N
+        ("I85", attendance_data.get("Prog_K_Month_5_7-8: ", 0)),        # ⚠️ OVERWRITES Prog_N
+        ("I86", attendance_data.get("Prog_K_Month_5_9-12: ", 0)),       # ⚠️ OVERWRITES Prog_N
+        ("J82", attendance_data.get("Prog_K_TK_Month_6_TK-3: ", 0)),    # ⚠️ OVERWRITES Prog_N
+        ("J83", attendance_data.get("Prog_K_Month_6_K-3: ", 0)),        # ⚠️ OVERWRITES Prog_N
+        ("J84", attendance_data.get("Prog_K_Month_6_4-6: ", 0)),        # ⚠️ OVERWRITES Prog_N
+        ("J85", attendance_data.get("Prog_K_Month_6_7-8: ", 0)),        # ⚠️ OVERWRITES Prog_N
+        ("J86", attendance_data.get("Prog_K_Month_6_9-12: ", 0)),       # ⚠️ OVERWRITES Prog_N
+        ("K82", attendance_data.get("Prog_K_TK_Month_7_TK-3: ", 0)),    # ⚠️ OVERWRITES Prog_N
+        ("K83", attendance_data.get("Prog_K_Month_7_K-3: ", 0)),        # ⚠️ OVERWRITES Prog_N
+        ("K84", attendance_data.get("Prog_K_Month_7_4-6: ", 0)),        # ⚠️ OVERWRITES Prog_N
+        ("K85", attendance_data.get("Prog_K_Month_7_7-8: ", 0)),        # ⚠️ OVERWRITES Prog_N
+        ("K86", attendance_data.get("Prog_K_Month_7_9-12: ", 0)),       # ⚠️ OVERWRITES Prog_N
+        ("L82", attendance_data.get("Prog_K_TK_Month_8_TK-3: ", 0)),    # ⚠️ OVERWRITES Prog_N
+        ("L83", attendance_data.get("Prog_K_Month_8_K-3: ", 0)),        # ⚠️ OVERWRITES Prog_N
+        ("L84", attendance_data.get("Prog_K_Month_8_4-6: ", 0)),        # ⚠️ OVERWRITES Prog_N
+        ("L85", attendance_data.get("Prog_K_Month_8_7-8: ", 0)),        # ⚠️ OVERWRITES Prog_N
+        ("L86", attendance_data.get("Prog_K_Month_8_9-12: ", 0)),       # ⚠️ OVERWRITES Prog_N
+        ("M82", attendance_data.get("Prog_K_TK_Month_9_TK-3: ", 0)),    # ⚠️ OVERWRITES Prog_N
+        ("M83", attendance_data.get("Prog_K_Month_9_K-3: ", 0)),        # ⚠️ OVERWRITES Prog_N
+        ("M84", attendance_data.get("Prog_K_Month_9_4-6: ", 0)),        # ⚠️ OVERWRITES Prog_N
+        ("M85", attendance_data.get("Prog_K_Month_9_7-8: ", 0)),        # ⚠️ OVERWRITES Prog_N
+        ("M86", attendance_data.get("Prog_K_Month_9_9-12: ", 0)),       # ⚠️ OVERWRITES Prog_N
+        ("N82", attendance_data.get("Prog_K_TK_Month_10_TK-3: ", 0)),   # ⚠️ OVERWRITES Prog_N
+        ("N83", attendance_data.get("Prog_K_Month_10_K-3: ", 0)),       # ⚠️ OVERWRITES Prog_N
+        ("N84", attendance_data.get("Prog_K_Month_10_4-6: ", 0)),       # ⚠️ OVERWRITES Prog_N
+        ("N85", attendance_data.get("Prog_K_Month_10_7-8: ", 0)),       # ⚠️ OVERWRITES Prog_N
+        ("N86", attendance_data.get("Prog_K_Month_10_9-12: ", 0)),      # ⚠️ OVERWRITES Prog_N
+        ("O82", attendance_data.get("Prog_K_TK_Month_11_TK-3: ", 0)),   # ⚠️ OVERWRITES Prog_N
+        ("O83", attendance_data.get("Prog_K_Month_11_K-3: ", 0)),       # ⚠️ OVERWRITES Prog_N
+        ("O84", attendance_data.get("Prog_K_Month_11_4-6: ", 0)),       # ⚠️ OVERWRITES Prog_N
+        ("O85", attendance_data.get("Prog_K_Month_11_7-8: ", 0)),       # ⚠️ OVERWRITES Prog_N
+        ("O86", attendance_data.get("Prog_K_Month_11_9-12: ", 0)),      # ⚠️ OVERWRITES Prog_N
+        ("P82", attendance_data.get("Prog_K_TK_Month_12_TK-3: ", 0)),   # ⚠️ OVERWRITES Prog_N
+        ("P83", attendance_data.get("Prog_K_Month_12_K-3: ", 0)),       # ⚠️ OVERWRITES Prog_N
+        ("P84", attendance_data.get("Prog_K_Month_12_4-6: ", 0)),       # ⚠️ OVERWRITES Prog_N
+        ("P85", attendance_data.get("Prog_K_Month_12_7-8: ", 0)),       # ⚠️ OVERWRITES Prog_N
+        ("P86", attendance_data.get("Prog_K_Month_12_9-12: ", 0)),      # ⚠️ OVERWRITES Prog_N
+        ("P82", attendance_data.get("Prog_K_TK_Month_12_TK-3: ", 0)),   # ⚠️ OVERWRITES Prog_N
+    ]
+    cell_mapping_list_K_12 = [
+        # =================================================================
+        # PROGRAM C CHARTER RESIDENT PLACEMENTS (Rows 57-61)
+        # =================================================================
+        ("E58", attendance_data.get("Prog_C_Month_1_K-3: ", 0)),
+        ("E59", attendance_data.get("Prog_C_Month_1_4-6: ", 0)),
+        ("E60", attendance_data.get("Prog_C_Month_1_7-8: ", 0)),
+        ("E61", attendance_data.get("Prog_C_Month_1_9-12: ", 0)),
+        ("E57", attendance_data.get("Prog_C_K_Month_1_K-3: ", 0)),
+        ("F58", attendance_data.get("Prog_C_Month_2_K-3: ", 0)),
+        ("F59", attendance_data.get("Prog_C_Month_2_4-6: ", 0)),
+        ("F60", attendance_data.get("Prog_C_Month_2_7-8: ", 0)),
+        ("F61", attendance_data.get("Prog_C_Month_2_9-12: ", 0)),
+        ("F57", attendance_data.get("Prog_C_K_Month_2_K-3: ", 0)),
+        ("G58", attendance_data.get("Prog_C_Month_3_K-3: ", 0)),
+        ("G59", attendance_data.get("Prog_C_Month_3_4-6: ", 0)),
+        ("G60", attendance_data.get("Prog_C_Month_3_7-8: ", 0)),
+        ("G61", attendance_data.get("Prog_C_Month_3_9-12: ", 0)),
+        ("G57", attendance_data.get("Prog_C_K_Month_3_K-3: ", 0)),
+        ("H58", attendance_data.get("Prog_C_Month_4_K-3: ", 0)),
+        ("H59", attendance_data.get("Prog_C_Month_4_4-6: ", 0)),
+        ("H60", attendance_data.get("Prog_C_Month_4_7-8: ", 0)),
+        ("H61", attendance_data.get("Prog_C_Month_4_9-12: ", 0)),
+        ("H57", attendance_data.get("Prog_C_K_Month_4_K-3: ", 0)),
+        ("I58", attendance_data.get("Prog_C_Month_5_K-3: ", 0)),
+        ("I59", attendance_data.get("Prog_C_Month_5_4-6: ", 0)),
+        ("I60", attendance_data.get("Prog_C_Month_5_7-8: ", 0)),
+        ("I61", attendance_data.get("Prog_C_Month_5_9-12: ", 0)),
+        ("I57", attendance_data.get("Prog_C_K_Month_5_K-3: ", 0)),
+        ("J58", attendance_data.get("Prog_C_Month_6_K-3: ", 0)),
+        ("J59", attendance_data.get("Prog_C_Month_6_4-6: ", 0)),
+        ("J60", attendance_data.get("Prog_C_Month_6_7-8: ", 0)),
+        ("J61", attendance_data.get("Prog_C_Month_6_9-12: ", 0)),
+        ("J57", attendance_data.get("Prog_C_K_Month_6_K-3: ", 0)),
+        ("K58", attendance_data.get("Prog_C_Month_7_K-3: ", 0)),
+        ("K59", attendance_data.get("Prog_C_Month_7_4-6: ", 0)),
+        ("K60", attendance_data.get("Prog_C_Month_7_7-8: ", 0)),
+        ("K61", attendance_data.get("Prog_C_Month_7_9-12: ", 0)),
+        ("K57", attendance_data.get("Prog_C_K_Month_7_K-3: ", 0)),
+        ("L58", attendance_data.get("Prog_C_Month_8_K-3: ", 0)),
+        ("L59", attendance_data.get("Prog_C_Month_8_4-6: ", 0)),
+        ("L60", attendance_data.get("Prog_C_Month_8_7-8: ", 0)),
+        ("L61", attendance_data.get("Prog_C_Month_8_9-12: ", 0)),
+        ("L57", attendance_data.get("Prog_C_K_Month_8_K-3: ", 0)),
+        ("M58", attendance_data.get("Prog_C_Month_9_K-3: ", 0)),
+        ("M59", attendance_data.get("Prog_C_Month_9_4-6: ", 0)),
+        ("M60", attendance_data.get("Prog_C_Month_9_7-8: ", 0)),
+        ("M61", attendance_data.get("Prog_C_Month_9_9-12: ", 0)),
+        ("M57", attendance_data.get("Prog_C_K_Month_9_K-3: ", 0)),
+        ("N58", attendance_data.get("Prog_C_Month_10_K-3: ", 0)),
+        ("N59", attendance_data.get("Prog_C_Month_10_4-6: ", 0)),
+        ("N60", attendance_data.get("Prog_C_Month_10_7-8: ", 0)),
+        ("N61", attendance_data.get("Prog_C_Month_10_9-12: ", 0)),
+        ("N57", attendance_data.get("Prog_C_K_Month_10_K-3: ", 0)),
+        ("O58", attendance_data.get("Prog_C_Month_11_K-3: ", 0)),
+        ("O59", attendance_data.get("Prog_C_Month_11_4-6: ", 0)),
+        ("O60", attendance_data.get("Prog_C_Month_11_7-8: ", 0)),
+        ("O61", attendance_data.get("Prog_C_Month_11_9-12: ", 0)),
+        ("O57", attendance_data.get("Prog_C_K_Month_11_K-3: ", 0)),
+        ("P58", attendance_data.get("Prog_C_Month_12_K-3: ", 0)),
+        ("P59", attendance_data.get("Prog_C_Month_12_4-6: ", 0)),
+        ("P60", attendance_data.get("Prog_C_Month_12_7-8: ", 0)),
+        ("P61", attendance_data.get("Prog_C_Month_12_9-12: ", 0)),
+        ("P57", attendance_data.get("Prog_C_K_Month_12_K-3: ", 0)),
+        
+        # =================================================================
+        # PROGRAM N NON-RESIDENT CHARTER PLACEMENTS (Rows 74-78)
+        # =================================================================
+        ("E75", attendance_data.get("Prog_N_Month_1_K-3: ", 0)),
         ("E76", attendance_data.get("Prog_N_Month_1_4-6: ", 0)),
         ("E77", attendance_data.get("Prog_N_Month_1_7-8: ", 0)),
         ("E78", attendance_data.get("Prog_N_Month_1_9-12: ", 0)),
-        ("E74", attendance_data.get("Prog_N_TK_Month_1_TK-3: ", 0)),
-        ("F75", attendance_data.get("Prog_N_Month_2_TK-3: ", 0)),
+        ("E74", attendance_data.get("Prog_N_K_Month_1_K-3: ", 0)),
+        ("F75", attendance_data.get("Prog_N_Month_2_K-3: ", 0)),
         ("F76", attendance_data.get("Prog_N_Month_2_4-6: ", 0)),
         ("F77", attendance_data.get("Prog_N_Month_2_7-8: ", 0)),
         ("F78", attendance_data.get("Prog_N_Month_2_9-12: ", 0)),
-        ("F74", attendance_data.get("Prog_N_TK_Month_2_TK-3: ", 0)),
-        ("G75", attendance_data.get("Prog_N_Month_3_TK-3: ", 0)),
+        ("F74", attendance_data.get("Prog_N_K_Month_2_K-3: ", 0)),
+        ("G75", attendance_data.get("Prog_N_Month_3_K-3: ", 0)),
         ("G76", attendance_data.get("Prog_N_Month_3_4-6: ", 0)),
         ("G77", attendance_data.get("Prog_N_Month_3_7-8: ", 0)),
         ("G78", attendance_data.get("Prog_N_Month_3_9-12: ", 0)),
-        ("G74", attendance_data.get("Prog_N_TK_Month_3_TK-3: ", 0)),
-        ("H75", attendance_data.get("Prog_N_Month_4_TK-3: ", 0)),
+        ("G74", attendance_data.get("Prog_N_K_Month_3_K-3: ", 0)),
+        ("H75", attendance_data.get("Prog_N_Month_4_K-3: ", 0)),
         ("H76", attendance_data.get("Prog_N_Month_4_4-6: ", 0)),
         ("H77", attendance_data.get("Prog_N_Month_4_7-8: ", 0)),
         ("H78", attendance_data.get("Prog_N_Month_4_9-12: ", 0)),
-        ("H74", attendance_data.get("Prog_N_TK_Month_4_TK-3: ", 0)),
-        ("I75", attendance_data.get("Prog_N_Month_5_TK-3: ", 0)),
+        ("H74", attendance_data.get("Prog_N_K_Month_4_K-3: ", 0)),
+        ("I75", attendance_data.get("Prog_N_Month_5_K-3: ", 0)),
         ("I76", attendance_data.get("Prog_N_Month_5_4-6: ", 0)),
         ("I77", attendance_data.get("Prog_N_Month_5_7-8: ", 0)),
         ("I78", attendance_data.get("Prog_N_Month_5_9-12: ", 0)),
-        ("I74", attendance_data.get("Prog_N_TK_Month_5_TK-3: ", 0)),
-        ("J75", attendance_data.get("Prog_N_Month_6_TK-3: ", 0)),
+        ("I74", attendance_data.get("Prog_N_K_Month_5_K-3: ", 0)),
+        ("J75", attendance_data.get("Prog_N_Month_6_K-3: ", 0)),
         ("J76", attendance_data.get("Prog_N_Month_6_4-6: ", 0)),
         ("J77", attendance_data.get("Prog_N_Month_6_7-8: ", 0)),
         ("J78", attendance_data.get("Prog_N_Month_6_9-12: ", 0)),
-        ("J74", attendance_data.get("Prog_N_TK_Month_6_TK-3: ", 0)),
-        ("K75", attendance_data.get("Prog_N_Month_7_TK-3: ", 0)),
+        ("J74", attendance_data.get("Prog_N_K_Month_6_K-3: ", 0)),
+        ("K75", attendance_data.get("Prog_N_Month_7_K-3: ", 0)),
         ("K76", attendance_data.get("Prog_N_Month_7_4-6: ", 0)),
         ("K77", attendance_data.get("Prog_N_Month_7_7-8: ", 0)),
         ("K78", attendance_data.get("Prog_N_Month_7_9-12: ", 0)),
-        ("K74", attendance_data.get("Prog_N_TK_Month_7_TK-3: ", 0)),
-        ("L75", attendance_data.get("Prog_N_Month_8_TK-3: ", 0)),
+        ("K74", attendance_data.get("Prog_N_K_Month_7_K-3: ", 0)),
+        ("L75", attendance_data.get("Prog_N_Month_8_K-3: ", 0)),
         ("L76", attendance_data.get("Prog_N_Month_8_4-6: ", 0)),
         ("L77", attendance_data.get("Prog_N_Month_8_7-8: ", 0)),
         ("L78", attendance_data.get("Prog_N_Month_8_9-12: ", 0)),
-        ("L74", attendance_data.get("Prog_N_TK_Month_8_TK-3: ", 0)),
-        ("M75", attendance_data.get("Prog_N_Month_9_TK-3: ", 0)),
+        ("L74", attendance_data.get("Prog_N_K_Month_8_K-3: ", 0)),
+        ("M75", attendance_data.get("Prog_N_Month_9_K-3: ", 0)),
         ("M76", attendance_data.get("Prog_N_Month_9_4-6: ", 0)),
         ("M77", attendance_data.get("Prog_N_Month_9_7-8: ", 0)),
         ("M78", attendance_data.get("Prog_N_Month_9_9-12: ", 0)),
-        ("M74", attendance_data.get("Prog_N_TK_Month_9_TK-3: ", 0)),
-        ("N75", attendance_data.get("Prog_N_Month_10_TK-3: ", 0)),
+        ("M74", attendance_data.get("Prog_N_K_Month_9_K-3: ", 0)),
+        ("N75", attendance_data.get("Prog_N_Month_10_K-3: ", 0)),
         ("N76", attendance_data.get("Prog_N_Month_10_4-6: ", 0)),
         ("N77", attendance_data.get("Prog_N_Month_10_7-8: ", 0)),
         ("N78", attendance_data.get("Prog_N_Month_10_9-12: ", 0)),
-        ("N74", attendance_data.get("Prog_N_TK_Month_10_TK-3: ", 0)),
-        ("O75", attendance_data.get("Prog_N_Month_11_TK-3: ", 0)),
+        ("N74", attendance_data.get("Prog_N_K_Month_10_K-3: ", 0)),
+        ("O75", attendance_data.get("Prog_N_Month_11_K-3: ", 0)),
         ("O76", attendance_data.get("Prog_N_Month_11_4-6: ", 0)),
         ("O77", attendance_data.get("Prog_N_Month_11_7-8: ", 0)),
         ("O78", attendance_data.get("Prog_N_Month_11_9-12: ", 0)),
-        ("O74", attendance_data.get("Prog_N_TK_Month_11_TK-3: ", 0)),
-        ("P75", attendance_data.get("Prog_N_Month_12_TK-3: ", 0)),
+        ("O74", attendance_data.get("Prog_N_K_Month_11_K-3: ", 0)),
+        ("P75", attendance_data.get("Prog_N_Month_12_K-3: ", 0)),
         ("P76", attendance_data.get("Prog_N_Month_12_4-6: ", 0)),
         ("P77", attendance_data.get("Prog_N_Month_12_7-8: ", 0)),
         ("P78", attendance_data.get("Prog_N_Month_12_9-12: ", 0)),
-        ("P74", attendance_data.get("Prog_N_TK_Month_12_TK-3: ", 0)),
+        ("P74", attendance_data.get("Prog_N_K_Month_12_K-3: ", 0)),
         
         # =================================================================
         # PROGRAM J INDEPENDENT STUDY CHARTER RESIDENT PLACEMENTS (Rows 64-69)
         # ERROR: CONFLICTS WITH PROGRAM K BELOW
         # ERROR: NEED TO SHIFT PROGRAM J DOWN 1 ROW TO AVOID WRONG DATA
         # =================================================================
-        ("E66", attendance_data.get("Prog_J_Month_1_TK-3: ", 0)),
+        ("E66", attendance_data.get("Prog_J_Month_1_K-3: ", 0)),
         ("E67", attendance_data.get("Prog_J_Month_1_4-6: ", 0)),
         ("E68", attendance_data.get("Prog_J_Month_1_7-8: ", 0)),
         ("E69", attendance_data.get("Prog_J_Month_1_9-12: ", 0)),
-        ("E65", attendance_data.get("Prog_J_TK_Month_1_TK-3: ", 0)),
-        ("F66", attendance_data.get("Prog_J_Month_2_TK-3: ", 0)),
+        ("E65", attendance_data.get("Prog_J_K_Month_1_K-3: ", 0)),
+        ("F66", attendance_data.get("Prog_J_Month_2_K-3: ", 0)),
         ("F67", attendance_data.get("Prog_J_Month_2_4-6: ", 0)),
         ("F68", attendance_data.get("Prog_J_Month_2_7-8: ", 0)),
         ("F69", attendance_data.get("Prog_J_Month_2_9-12: ", 0)),
-        ("F65", attendance_data.get("Prog_J_TK_Month_2_TK-3: ", 0)),
-        ("G66", attendance_data.get("Prog_J_Month_3_TK-3: ", 0)),
+        ("F65", attendance_data.get("Prog_J_K_Month_2_K-3: ", 0)),
+        ("G66", attendance_data.get("Prog_J_Month_3_K-3: ", 0)),
         ("G67", attendance_data.get("Prog_J_Month_3_4-6: ", 0)),
         ("G68", attendance_data.get("Prog_J_Month_3_7-8: ", 0)),
         ("G69", attendance_data.get("Prog_J_Month_3_9-12: ", 0)),
-        ("G65", attendance_data.get("Prog_J_TK_Month_3_TK-3: ", 0)),
-        ("H66", attendance_data.get("Prog_J_Month_4_TK-3: ", 0)),
+        ("G65", attendance_data.get("Prog_J_K_Month_3_K-3: ", 0)),
+        ("H66", attendance_data.get("Prog_J_Month_4_K-3: ", 0)),
         ("H67", attendance_data.get("Prog_J_Month_4_4-6: ", 0)),
         ("H68", attendance_data.get("Prog_J_Month_4_7-8: ", 0)),
         ("H69", attendance_data.get("Prog_J_Month_4_9-12: ", 0)),
-        ("H65", attendance_data.get("Prog_J_TK_Month_4_TK-3: ", 0)),
-        ("I66", attendance_data.get("Prog_J_Month_5_TK-3: ", 0)),
+        ("H65", attendance_data.get("Prog_J_K_Month_4_K-3: ", 0)),
+        ("I66", attendance_data.get("Prog_J_Month_5_K-3: ", 0)),
         ("I67", attendance_data.get("Prog_J_Month_5_4-6: ", 0)),
         ("I68", attendance_data.get("Prog_J_Month_5_7-8: ", 0)),
         ("I69", attendance_data.get("Prog_J_Month_5_9-12: ", 0)),
-        ("I65", attendance_data.get("Prog_J_TK_Month_5_TK-3: ", 0)),
-        ("J66", attendance_data.get("Prog_J_Month_6_TK-3: ", 0)),
+        ("I65", attendance_data.get("Prog_J_K_Month_5_K-3: ", 0)),
+        ("J66", attendance_data.get("Prog_J_Month_6_K-3: ", 0)),
         ("J67", attendance_data.get("Prog_J_Month_6_4-6: ", 0)),
         ("J68", attendance_data.get("Prog_J_Month_6_7-8: ", 0)),
         ("J69", attendance_data.get("Prog_J_Month_6_9-12: ", 0)),
-        ("J65", attendance_data.get("Prog_J_TK_Month_6_TK-3: ", 0)),
-        ("K66", attendance_data.get("Prog_J_Month_7_TK-3: ", 0)),
+        ("J65", attendance_data.get("Prog_J_K_Month_6_K-3: ", 0)),
+        ("K66", attendance_data.get("Prog_J_Month_7_K-3: ", 0)),
         ("K67", attendance_data.get("Prog_J_Month_7_4-6: ", 0)),
         ("K68", attendance_data.get("Prog_J_Month_7_7-8: ", 0)),
         ("K69", attendance_data.get("Prog_J_Month_7_9-12: ", 0)),
-        ("K65", attendance_data.get("Prog_J_TK_Month_7_TK-3: ", 0)),
-        ("L66", attendance_data.get("Prog_J_Month_8_TK-3: ", 0)),
+        ("K65", attendance_data.get("Prog_J_K_Month_7_K-3: ", 0)),
+        ("L66", attendance_data.get("Prog_J_Month_8_K-3: ", 0)),
         ("L67", attendance_data.get("Prog_J_Month_8_4-6: ", 0)),
         ("L68", attendance_data.get("Prog_J_Month_8_7-8: ", 0)),
         ("L69", attendance_data.get("Prog_J_Month_8_9-12: ", 0)),
-        ("L65", attendance_data.get("Prog_J_TK_Month_8_TK-3: ", 0)),
-        ("M66", attendance_data.get("Prog_J_Month_9_TK-3: ", 0)),
+        ("L65", attendance_data.get("Prog_J_K_Month_8_K-3: ", 0)),
+        ("M66", attendance_data.get("Prog_J_Month_9_K-3: ", 0)),
         ("M67", attendance_data.get("Prog_J_Month_9_4-6: ", 0)),
         ("M68", attendance_data.get("Prog_J_Month_9_7-8: ", 0)),
         ("M69", attendance_data.get("Prog_J_Month_9_9-12: ", 0)),
-        ("M65", attendance_data.get("Prog_J_TK_Month_9_TK-3: ", 0)),
-        ("N66", attendance_data.get("Prog_J_Month_10_TK-3: ", 0)),
+        ("M65", attendance_data.get("Prog_J_K_Month_9_K-3: ", 0)),
+        ("N66", attendance_data.get("Prog_J_Month_10_K-3: ", 0)),
         ("N67", attendance_data.get("Prog_J_Month_10_4-6: ", 0)),
         ("N68", attendance_data.get("Prog_J_Month_10_7-8: ", 0)),
         ("N69", attendance_data.get("Prog_J_Month_10_9-12: ", 0)),
-        ("N65", attendance_data.get("Prog_J_TK_Month_10_TK-3: ", 0)),
-        ("O66", attendance_data.get("Prog_J_Month_11_TK-3: ", 0)),
+        ("N65", attendance_data.get("Prog_J_K_Month_10_K-3: ", 0)),
+        ("O66", attendance_data.get("Prog_J_Month_11_K-3: ", 0)),
         ("O67", attendance_data.get("Prog_J_Month_11_4-6: ", 0)),
         ("O68", attendance_data.get("Prog_J_Month_11_7-8: ", 0)),
         ("O69", attendance_data.get("Prog_J_Month_11_9-12: ", 0)),
-        ("O65", attendance_data.get("Prog_J_TK_Month_11_TK-3: ", 0)),
-        ("P66", attendance_data.get("Prog_J_Month_12_TK-3: ", 0)),
+        ("O65", attendance_data.get("Prog_J_K_Month_11_K-3: ", 0)),
+        ("P66", attendance_data.get("Prog_J_Month_12_K-3: ", 0)),
         ("P67", attendance_data.get("Prog_J_Month_12_4-6: ", 0)),
         ("P68", attendance_data.get("Prog_J_Month_12_7-8: ", 0)),
         ("P69", attendance_data.get("Prog_J_Month_12_9-12: ", 0)),
-        ("P65", attendance_data.get("Prog_J_TK_Month_12_TK-3: ", 0)),
+        ("P65", attendance_data.get("Prog_J_K_Month_12_K-3: ", 0)),
         
         # =================================================================
         # PROGRAM K INDEPENDENT STUDY CHARTER NON-RESIDENT PLACEMENTS (82-86)
         # WARNING: These cells OVERWRITE Program N data! Same cells used!
         # =================================================================
-        ("E83", attendance_data.get("Prog_K_Month_1_TK-3: ", 0)),       # ⚠️ OVERWRITES Prog_N
+        ("E83", attendance_data.get("Prog_K_Month_1_K-3: ", 0)),       # ⚠️ OVERWRITES Prog_N
         ("E84", attendance_data.get("Prog_K_Month_1_4-6: ", 0)),        # ⚠️ OVERWRITES Prog_N
         ("E85", attendance_data.get("Prog_K_Month_1_7-8: ", 0)),        # ⚠️ OVERWRITES Prog_N
         ("E86", attendance_data.get("Prog_K_Month_1_9-12: ", 0)),       # ⚠️ OVERWRITES Prog_N
-        ("E82", attendance_data.get("Prog_K_TK_Month_1_TK-3: ", 0)),    # ⚠️ OVERWRITES Prog_N
-        ("F83", attendance_data.get("Prog_K_Month_2_TK-3: ", 0)),       # ⚠️ OVERWRITES Prog_N
+        ("E82", attendance_data.get("Prog_K_K_Month_1_K-3: ", 0)),    # ⚠️ OVERWRITES Prog_N
+        ("F83", attendance_data.get("Prog_K_Month_2_K-3: ", 0)),       # ⚠️ OVERWRITES Prog_N
         ("F84", attendance_data.get("Prog_K_Month_2_4-6: ", 0)),        # ⚠️ OVERWRITES Prog_N
         ("F85", attendance_data.get("Prog_K_Month_2_7-8: ", 0)),        # ⚠️ OVERWRITES Prog_N
         ("F86", attendance_data.get("Prog_K_Month_2_9-12: ", 0)),       # ⚠️ OVERWRITES Prog_N
-        ("F82", attendance_data.get("Prog_K_TK_Month_2_TK-3: ", 0)),    # ⚠️ OVERWRITES Prog_N
-        ("G83", attendance_data.get("Prog_K_Month_3_TK-3: ", 0)),       # ⚠️ OVERWRITES Prog_N
+        ("F82", attendance_data.get("Prog_K_K_Month_2_K-3: ", 0)),    # ⚠️ OVERWRITES Prog_N
+        ("G83", attendance_data.get("Prog_K_Month_3_K-3: ", 0)),       # ⚠️ OVERWRITES Prog_N
         ("G84", attendance_data.get("Prog_K_Month_3_4-6: ", 0)),        # ⚠️ OVERWRITES Prog_N
         ("G85", attendance_data.get("Prog_K_Month_3_7-8: ", 0)),        # ⚠️ OVERWRITES Prog_N
         ("G86", attendance_data.get("Prog_K_Month_3_9-12: ", 0)),       # ⚠️ OVERWRITES Prog_N
-        ("G82", attendance_data.get("Prog_K_TK_Month_3_TK-3: ", 0)),    # ⚠️ OVERWRITES Prog_N
-        ("H83", attendance_data.get("Prog_K_Month_4_TK-3: ", 0)),       # ⚠️ OVERWRITES Prog_N
+        ("G82", attendance_data.get("Prog_K_K_Month_3_K-3: ", 0)),    # ⚠️ OVERWRITES Prog_N
+        ("H83", attendance_data.get("Prog_K_Month_4_K-3: ", 0)),       # ⚠️ OVERWRITES Prog_N
         ("H84", attendance_data.get("Prog_K_Month_4_4-6: ", 0)),        # ⚠️ OVERWRITES Prog_N
         ("H85", attendance_data.get("Prog_K_Month_4_7-8: ", 0)),        # ⚠️ OVERWRITES Prog_N
         ("H86", attendance_data.get("Prog_K_Month_4_9-12: ", 0)),       # ⚠️ OVERWRITES Prog_N
-        ("H82", attendance_data.get("Prog_K_TK_Month_4_TK-3: ", 0)),    # ⚠️ OVERWRITES Prog_N
-        ("I83", attendance_data.get("Prog_K_Month_5_TK-3: ", 0)),       # ⚠️ OVERWRITES Prog_N
+        ("H82", attendance_data.get("Prog_K_K_Month_4_K-3: ", 0)),    # ⚠️ OVERWRITES Prog_N
+        ("I83", attendance_data.get("Prog_K_Month_5_K-3: ", 0)),       # ⚠️ OVERWRITES Prog_N
         ("I84", attendance_data.get("Prog_K_Month_5_4-6: ", 0)),        # ⚠️ OVERWRITES Prog_N
         ("I85", attendance_data.get("Prog_K_Month_5_7-8: ", 0)),        # ⚠️ OVERWRITES Prog_N
         ("I86", attendance_data.get("Prog_K_Month_5_9-12: ", 0)),       # ⚠️ OVERWRITES Prog_N
-        ("I82", attendance_data.get("Prog_K_TK_Month_5_TK-3: ", 0)),    # ⚠️ OVERWRITES Prog_N
-        ("J83", attendance_data.get("Prog_K_Month_6_TK-3: ", 0)),       # ⚠️ OVERWRITES Prog_N
+        ("I82", attendance_data.get("Prog_K_K_Month_5_K-3: ", 0)),    # ⚠️ OVERWRITES Prog_N
+        ("J83", attendance_data.get("Prog_K_Month_6_K-3: ", 0)),       # ⚠️ OVERWRITES Prog_N
         ("J84", attendance_data.get("Prog_K_Month_6_4-6: ", 0)),        # ⚠️ OVERWRITES Prog_N
         ("J85", attendance_data.get("Prog_K_Month_6_7-8: ", 0)),        # ⚠️ OVERWRITES Prog_N
         ("J86", attendance_data.get("Prog_K_Month_6_9-12: ", 0)),       # ⚠️ OVERWRITES Prog_N
-        ("J82", attendance_data.get("Prog_K_TK_Month_6_TK-3: ", 0)),    # ⚠️ OVERWRITES Prog_N
-        ("K83", attendance_data.get("Prog_K_Month_7_TK-3: ", 0)),       # ⚠️ OVERWRITES Prog_N
+        ("J82", attendance_data.get("Prog_K_K_Month_6_K-3: ", 0)),    # ⚠️ OVERWRITES Prog_N
+        ("K83", attendance_data.get("Prog_K_Month_7_K-3: ", 0)),       # ⚠️ OVERWRITES Prog_N
         ("K84", attendance_data.get("Prog_K_Month_7_4-6: ", 0)),        # ⚠️ OVERWRITES Prog_N
         ("K85", attendance_data.get("Prog_K_Month_7_7-8: ", 0)),        # ⚠️ OVERWRITES Prog_N
         ("K86", attendance_data.get("Prog_K_Month_7_9-12: ", 0)),       # ⚠️ OVERWRITES Prog_N
-        ("K82", attendance_data.get("Prog_K_TK_Month_7_TK-3: ", 0)),    # ⚠️ OVERWRITES Prog_N
-        ("L83", attendance_data.get("Prog_K_Month_8_TK-3: ", 0)),       # ⚠️ OVERWRITES Prog_N
+        ("K82", attendance_data.get("Prog_K_K_Month_7_K-3: ", 0)),    # ⚠️ OVERWRITES Prog_N
+        ("L83", attendance_data.get("Prog_K_Month_8_K-3: ", 0)),       # ⚠️ OVERWRITES Prog_N
         ("L84", attendance_data.get("Prog_K_Month_8_4-6: ", 0)),        # ⚠️ OVERWRITES Prog_N
         ("L85", attendance_data.get("Prog_K_Month_8_7-8: ", 0)),        # ⚠️ OVERWRITES Prog_N
         ("L86", attendance_data.get("Prog_K_Month_8_9-12: ", 0)),       # ⚠️ OVERWRITES Prog_N
-        ("L82", attendance_data.get("Prog_K_TK_Month_8_TK-3: ", 0)),    # ⚠️ OVERWRITES Prog_N
-        ("M83", attendance_data.get("Prog_K_Month_9_TK-3: ", 0)),       # ⚠️ OVERWRITES Prog_N
+        ("L82", attendance_data.get("Prog_K_K_Month_8_K-3: ", 0)),    # ⚠️ OVERWRITES Prog_N
+        ("M83", attendance_data.get("Prog_K_Month_9_K-3: ", 0)),       # ⚠️ OVERWRITES Prog_N
         ("M84", attendance_data.get("Prog_K_Month_9_4-6: ", 0)),        # ⚠️ OVERWRITES Prog_N
         ("M85", attendance_data.get("Prog_K_Month_9_7-8: ", 0)),        # ⚠️ OVERWRITES Prog_N
         ("M86", attendance_data.get("Prog_K_Month_9_9-12: ", 0)),       # ⚠️ OVERWRITES Prog_N
-        ("M82", attendance_data.get("Prog_K_TK_Month_9_TK-3: ", 0)),    # ⚠️ OVERWRITES Prog_N
-        ("N83", attendance_data.get("Prog_K_Month_10_TK-3: ", 0)),      # ⚠️ OVERWRITES Prog_N
+        ("M82", attendance_data.get("Prog_K_K_Month_9_K-3: ", 0)),    # ⚠️ OVERWRITES Prog_N
+        ("N83", attendance_data.get("Prog_K_Month_10_K-3: ", 0)),      # ⚠️ OVERWRITES Prog_N
         ("N84", attendance_data.get("Prog_K_Month_10_4-6: ", 0)),       # ⚠️ OVERWRITES Prog_N
         ("N85", attendance_data.get("Prog_K_Month_10_7-8: ", 0)),       # ⚠️ OVERWRITES Prog_N
         ("N86", attendance_data.get("Prog_K_Month_10_9-12: ", 0)),      # ⚠️ OVERWRITES Prog_N
-        ("N82", attendance_data.get("Prog_K_TK_Month_10_TK-3: ", 0)),   # ⚠️ OVERWRITES Prog_N
-        ("O83", attendance_data.get("Prog_K_Month_11_TK-3: ", 0)),      # ⚠️ OVERWRITES Prog_N
+        ("N82", attendance_data.get("Prog_K_K_Month_10_K-3: ", 0)),   # ⚠️ OVERWRITES Prog_N
+        ("O83", attendance_data.get("Prog_K_Month_11_K-3: ", 0)),      # ⚠️ OVERWRITES Prog_N
         ("O84", attendance_data.get("Prog_K_Month_11_4-6: ", 0)),       # ⚠️ OVERWRITES Prog_N
         ("O85", attendance_data.get("Prog_K_Month_11_7-8: ", 0)),       # ⚠️ OVERWRITES Prog_N
         ("O86", attendance_data.get("Prog_K_Month_11_9-12: ", 0)),      # ⚠️ OVERWRITES Prog_N
-        ("O82", attendance_data.get("Prog_K_TK_Month_11_TK-3: ", 0)),   # ⚠️ OVERWRITES Prog_N
-        ("P83", attendance_data.get("Prog_K_Month_12_TK-3: ", 0)),      # ⚠️ OVERWRITES Prog_N
+        ("O82", attendance_data.get("Prog_K_K_Month_11_K-3: ", 0)),   # ⚠️ OVERWRITES Prog_N
+        ("P83", attendance_data.get("Prog_K_Month_12_K-3: ", 0)),      # ⚠️ OVERWRITES Prog_N
         ("P84", attendance_data.get("Prog_K_Month_12_4-6: ", 0)),       # ⚠️ OVERWRITES Prog_N
         ("P85", attendance_data.get("Prog_K_Month_12_7-8: ", 0)),       # ⚠️ OVERWRITES Prog_N
         ("P86", attendance_data.get("Prog_K_Month_12_9-12: ", 0)),      # ⚠️ OVERWRITES Prog_N
-        ("P82", attendance_data.get("Prog_K_TK_Month_12_TK-3: ", 0)),   # ⚠️ OVERWRITES Prog_N
+        ("P82", attendance_data.get("Prog_K_K_Month_12_K-3: ", 0)),   # ⚠️ OVERWRITES Prog_N
     ]
 
+    
+    # Choose which cell mapping list to use based on school type
+    if use_tk_12:
+        cell_mapping_list = cell_mapping_list_TK_12
+        print("📝 Using TK-12 cell mapping...")
+    else:
+        cell_mapping_list = cell_mapping_list_K_12
+        print("📝 Using K-12 cell mapping...")
     
     # Open the Excel file and prepare to write all data at once
     workbook = openpyxl.load_workbook(output_excel_path)
@@ -555,17 +845,27 @@ def run_ada_audit_process():
         school_name = "CCCS"
         print(f"   Using default: {school_name}")
     
+    # Ask if the school is TK-12 or K-12
+    print("\n🎯 School Grade Configuration:")
+    school_type = input("   Is this a TK-12 or K-12 school? (Enter 'TK' or 'K'): ").strip().upper()
+    if school_type not in ['TK', 'K']:
+        school_type = 'TK'
+        print(f"   Invalid input. Using default: TK-12")
+    
+    use_tk_12 = (school_type == 'TK')
+    
     print(f"\n✅ Configuration:")
     print(f"   Location: {location}")
     print(f"   School Year: {school_year}")
     print(f"   School Name: {school_name}")
+    print(f"   School Type: {school_type}-12")
     print("=" * 60)
     
     # =================================================================
     # STEP 2: Define file paths and program information
     # =================================================================
     input_attendance_file = (
-"C:\\Users\\Shawn\\Downloads\\PrintMonthlyAttendanceSummaryTotals_20251021_143005_82100f5.xlsx"
+"C:\\Users\\Shawn\\Downloads\\PrintMonthlyAttendanceSummaryTotals_20251207_193511_5715853.xlsx"
     )
     output_audit_file = "C:\\Users\\Shawn\\Downloads\\2025-2026_I4C_ADA_Reconciliation.xlsx"
     target_worksheet_name = "Template- Apportionment Summary"
@@ -733,13 +1033,21 @@ def run_ada_audit_process():
     
     consolidated_attendance_data = {}
     
+    # Determine which age groups to use based on school type
+    if use_tk_12:
+        age_groups = ["TK-3", "4-6", "7-8", "9-12"]
+        print(f"   Using TK-12 age groups: {age_groups}")
+    else:
+        age_groups = ["K-3", "4-6", "7-8", "9-12"]
+        print(f"   Using K-12 age groups: {age_groups}")
+    
     # Process each consolidation rule
     for parent_program, child_programs in program_consolidation_rules.items():
         print(f"  Consolidating {parent_program}: {child_programs}")
         
         # For each month (1-12) and age group combination
         for month in range(1, 13):
-            for age_group in ["TK-3", "4-6", "7-8", "9-12"]:
+            for age_group in age_groups:
                 # Create the field name pattern
                 field_pattern = f"{parent_program}_Month_{month}_{age_group}: "
                 
@@ -790,31 +1098,40 @@ def run_ada_audit_process():
     
     # Check for keys NOT in cell_mapping_list
     print("\n⚠️  Checking for keys that are NOT in cell_mapping_list...")
+    
+    # Build expected keys based on school type
+    if use_tk_12:
+        grade_suffix = "TK"
+        first_age_group = "TK-3"
+    else:
+        grade_suffix = "K"
+        first_age_group = "K-3"
+    
     expected_keys = set([
         # Prog_C
-        *[f"Prog_C_Month_{m}_TK-3: " for m in range(1, 13)],
+        *[f"Prog_C_Month_{m}_{first_age_group}: " for m in range(1, 13)],
         *[f"Prog_C_Month_{m}_4-6: " for m in range(1, 13)],
         *[f"Prog_C_Month_{m}_7-8: " for m in range(1, 13)],
         *[f"Prog_C_Month_{m}_9-12: " for m in range(1, 13)],
-        *[f"Prog_C_TK_Month_{m}_TK-3: " for m in range(1, 13)],
+        *[f"Prog_C_{grade_suffix}_Month_{m}_{first_age_group}: " for m in range(1, 13)],
         # Prog_N
-        *[f"Prog_N_Month_{m}_TK-3: " for m in range(1, 13)],
+        *[f"Prog_N_Month_{m}_{first_age_group}: " for m in range(1, 13)],
         *[f"Prog_N_Month_{m}_4-6: " for m in range(1, 13)],
         *[f"Prog_N_Month_{m}_7-8: " for m in range(1, 13)],
         *[f"Prog_N_Month_{m}_9-12: " for m in range(1, 13)],
-        *[f"Prog_N_TK_Month_{m}_TK-3: " for m in range(1, 13)],
+        *[f"Prog_N_{grade_suffix}_Month_{m}_{first_age_group}: " for m in range(1, 13)],
         # Prog_J
-        *[f"Prog_J_Month_{m}_TK-3: " for m in range(1, 13)],
+        *[f"Prog_J_Month_{m}_{first_age_group}: " for m in range(1, 13)],
         *[f"Prog_J_Month_{m}_4-6: " for m in range(1, 13)],
         *[f"Prog_J_Month_{m}_7-8: " for m in range(1, 13)],
         *[f"Prog_J_Month_{m}_9-12: " for m in range(1, 13)],
-        *[f"Prog_J_TK_Month_{m}_TK-3: " for m in range(1, 13)],
+        *[f"Prog_J_{grade_suffix}_Month_{m}_{first_age_group}: " for m in range(1, 13)],
         # Prog_K
-        *[f"Prog_K_Month_{m}_TK-3: " for m in range(1, 13)],
+        *[f"Prog_K_Month_{m}_{first_age_group}: " for m in range(1, 13)],
         *[f"Prog_K_Month_{m}_4-6: " for m in range(1, 13)],
         *[f"Prog_K_Month_{m}_7-8: " for m in range(1, 13)],
         *[f"Prog_K_Month_{m}_9-12: " for m in range(1, 13)],
-        *[f"Prog_K_TK_Month_{m}_TK-3: " for m in range(1, 13)],
+        *[f"Prog_K_{grade_suffix}_Month_{m}_{first_age_group}: " for m in range(1, 13)],
     ])
     
     unexpected_keys = []
@@ -840,12 +1157,13 @@ def run_ada_audit_process():
     write_all_attendance_data_to_excel_efficiently(
         consolidated_attendance_data, 
         output_audit_file, 
-        target_worksheet_name
+        target_worksheet_name,
+        use_tk_12
     )
     
     print("\n🎉 ADA Audit process completed successfully!")
     print(f"📊 Results saved to: {output_audit_file}")
-    print(f"📍 Configuration used: {location}, {school_year}, {school_name}")
+    print(f"📍 Configuration used: {location}, {school_year}, {school_name}, {school_type}-12")
     print("\n💡 Note: McClellan (CM) and Sac Youth Center (SYC) totals have been")
     print("   automatically added to their respective parent program totals.")
 

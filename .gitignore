@@ -139,6 +139,7 @@ dmypy.json
 
 # Backup files
 *~
+~$*
 *.bak
 *.backup
 *.swp
